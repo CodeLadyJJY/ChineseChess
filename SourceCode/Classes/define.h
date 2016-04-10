@@ -53,7 +53,9 @@ typedef struct ChessmanPosition
 // 定义一个棋子走步
 typedef struct ChessMove
 {
-	int	id;
+	int	id;				// 棋子编号
+	int type;			// 棋子类型
+	int eaten_id;		// 被吃子id
 	ChessmanPos	from;
 	ChessmanPos	to;
 }ChessMove;

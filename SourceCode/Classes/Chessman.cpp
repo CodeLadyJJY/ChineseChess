@@ -38,11 +38,8 @@ void Chessman::setPos(int row, int col)
 {
 	this->m_x = row;
 	this->m_y = col;
-	int x, y;
-	x = BOARD_WIDTH + GRID_WIDTH * col;
-	y = BOARD_HEIGHT + GRID_WIDTH * (9 - row);
-	p_x = x;
-	p_y = y;
+	p_x = GRID_WIDTH * col - BOARD_WIDTH / 2;
+	p_y = GRID_WIDTH * (9 - row) - BOARD_HEIGHT / 2;
 }
 
 void Chessman::setPositionRC(int row, int col)

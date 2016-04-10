@@ -27,10 +27,14 @@ bool GameScene::init()
     size = Director::getInstance()->getWinSize();
 
 	// 棋盘
-	auto board = Sprite::createWithSpriteFrameName("background.png");
+	board = Node::create();
 	board->setPosition(Vec2(size.width / 2, size.height / 2));
-	board->setScale(0.5);
 	this->addChild(board);
+
+	auto boardSprite = Sprite::createWithSpriteFrameName("background.png");
+	boardSprite->setPosition(Vec2(size.width / 2, size.height / 2));
+	boardSprite->setScale(0.5);
+	this->addChild(boardSprite, -1);
 
 	// 初始化棋子
 	int id = 0;
@@ -42,7 +46,7 @@ bool GameScene::init()
 			}
 
 	// 初始化数据
-	is_red = true;
+	color = 1;
 	is_selected = false;
 	red_king_id = 27;
 	black_king_id = 4;
@@ -52,15 +56,29 @@ bool GameScene::init()
 			map[i][j] = InitChessBoard[i][j];
 		}
 
+	// 提示下子图片1
+	curChessman[0] = Sprite::createWithSpriteFrameName("1.png");
+	curChessman[0]->setPosition(Vec2(size.width / 2, size.height * 9 / 10));
+	curChessman[0]->setVisible(false);
+	this->addChild(curChessman[0]);
+	// 提示下子图片2
+	curChessman[1] = Sprite::createWithSpriteFrameName("8.png");
+	curChessman[1]->setPosition(Vec2(size.width / 2, size.height * 9 / 10));
+	curChessman[1]->setVisible(false);
+	this->addChild(curChessman[1]);
+
+	// 当前下子方图片
+	curChessman[1]->setVisible(true);
+
 	// 选择图片1
 	selected[0] = Sprite::createWithSpriteFrameName("selected1.png");
 	selected[0]->setVisible(false);
-	this->addChild(selected[0]);
+	board->addChild(selected[0]);
 
 	// 选择图片2
 	selected[1] = Sprite::createWithSpriteFrameName("selected2.png");
 	selected[1]->setVisible(false);
-	this->addChild(selected[1]);
+	board->addChild(selected[1]);
 
 	// 按钮
 	auto menuItemReStart = MenuItemFont::create("Restart", CC_CALLBACK_1(GameScene::menuRestartCallBack, this));
@@ -72,28 +90,30 @@ bool GameScene::init()
 	this->addChild(menu);
     
 	// 触摸侦听
-	listener = EventListenerTouchOneByOne::create();
+	auto listener = EventListenerTouchOneByOne::create();
 
 	listener->onTouchBegan = [&](Touch * t, Event * e) {
-		int x = (t->getLocation().x - BOARD_WIDTH + GRID_WIDTH / 2) / GRID_WIDTH;
-		int y = (t->getLocation().y - BOARD_HEIGHT + GRID_WIDTH / 2) / GRID_WIDTH;
+		auto p = board->convertTouchToNodeSpace(t);
+		int x = (p.x + BOARD_WIDTH / 2 + GRID_WIDTH / 2) / GRID_WIDTH;
+		int y = (p.y + BOARD_HEIGHT / 2 + GRID_WIDTH / 2) / GRID_WIDTH;
 
 		// 点击棋子
-		if (isClickOnChessman(t->getLocation().x, t->getLocation().y, x, y))
+		if (isClickOnChessman(p.x, p.y, x, y))
 		{
 			// 如果已选择第一个棋子，并且点击的是对方棋子，并且是合法走步，则吃子
-			if (is_selected && isRedOrBlack(map[9 - y][x], is_red) && isValidMove(9 - y, x))
+			if (is_selected && isRedOrBlack(map[9 - y][x], color) && isValidMove(9 - y, x))
 			{
 				captureChessman();
 				unSelectChessman(0);
 				selectChessman(1);
-				is_red = !is_red;
+				color = !color;
+				setCurChessman(color);
 			}
 			// 如果点击的是己方棋子，则选择棋子
-			else if(isRedOrBlack(map[9 - y][x], !is_red))
+			else if(isRedOrBlack(map[9 - y][x], !color))
 			{
-				moveStep.from.x = allChessman[selected_id]->m_x;
-				moveStep.from.y = allChessman[selected_id]->m_y;
+				moveStep.from.x = allChessman[moveStep.id]->m_x;
+				moveStep.from.y = allChessman[moveStep.id]->m_y;
 				unSelectChessman(1);
 				selectChessman(0);
 			}
@@ -104,7 +124,8 @@ bool GameScene::init()
 			moveChessman();
 			unSelectChessman(0);
 			selectChessman(1);
-			is_red = !is_red;
+			color = !color;
+			setCurChessman(color);
 		}
 
 		if (isGameOver())
@@ -124,7 +145,7 @@ void GameScene::newChessman(int x, int y, int id)
 	auto pSprite = Chessman::create(InitChessBoard[x][y]);	
 	pSprite->id = id;
 	pSprite->setPositionRC(x, y);
-	this->addChild(pSprite);
+	board->addChild(pSprite);
 	allChessman[id] = pSprite;
 }
 
@@ -133,11 +154,11 @@ void GameScene::moveChessman()
 {
 	float d = sqrt(pow(moveStep.from.x - moveStep.to.x, 2) + pow(moveStep.from.y - moveStep.to.y, 2));
 
-	allChessman[selected_id]->runAction(MoveTo::create(d / 8.0, Vec2(BOARD_WIDTH + GRID_WIDTH * moveStep.to.y, BOARD_HEIGHT + GRID_WIDTH * (9 - moveStep.to.x))));
-	allChessman[selected_id]->setPos(moveStep.to.x, moveStep.to.y);
+	allChessman[moveStep.id]->runAction(MoveBy::create(d / 8.0, GRID_WIDTH * Vec2(moveStep.to.y - moveStep.from.y, moveStep.from.x - moveStep.to.x)));
+	allChessman[moveStep.id]->setPos(moveStep.to.x, moveStep.to.y);
 
 	map[moveStep.from.x][moveStep.from.y] = NOCHESS;
-	map[moveStep.to.x][moveStep.to.y] = moveStep.id;
+	map[moveStep.to.x][moveStep.to.y] = moveStep.type;
 }
 
 // 吃子
@@ -145,10 +166,11 @@ void GameScene::captureChessman()
 {
 	float d = sqrt(pow(moveStep.from.x - moveStep.to.x, 2) + pow(moveStep.from.y - moveStep.to.y, 2));
 
-	allChessman[selected_id]->runAction(Sequence::create(MoveTo::create(d / 8.0, Vec2(allChessman[eaten_id]->p_x, allChessman[eaten_id]->p_y)), CCCallFunc::create([&] {allChessman[eaten_id]->removeFromParent();}), NULL));
-	allChessman[selected_id]->setPos(moveStep.to.x, moveStep.to.y);
-	allChessman[eaten_id]->isLive = false;
-	map[moveStep.to.x][moveStep.to.y] = moveStep.id;
+	allChessman[moveStep.id]->runAction(Sequence::create(MoveBy::create(d / 8.0, GRID_WIDTH * Vec2(moveStep.to.y - moveStep.from.y, moveStep.from.x - moveStep.to.x)), CCCallFunc::create([&] {allChessman[moveStep.eaten_id]->removeFromParent();}), NULL));
+	allChessman[moveStep.id]->setPos(moveStep.to.x, moveStep.to.y);
+
+	allChessman[moveStep.eaten_id]->isLive = false;
+	map[moveStep.to.x][moveStep.to.y] = moveStep.type;
 	map[moveStep.from.x][moveStep.from.y] = NOCHESS;
 }
 
@@ -166,8 +188,8 @@ bool GameScene::isRedOrBlack(int x, int type)
 // 判断一个棋子的走位是否合法
 bool GameScene::isValidMove(int toX, int toY)
 {
-	int fromX = allChessman[selected_id]->m_x;
-	int fromY = allChessman[selected_id]->m_y;
+	int fromX = allChessman[moveStep.id]->m_x;
+	int fromY = allChessman[moveStep.id]->m_y;
 	int moveChessID = map[fromX][fromY];
 	int targetID = map[toX][toY];
 
@@ -376,7 +398,7 @@ bool GameScene::isValidMove(int toX, int toY)
 			return false;
 	}
 
-	moveStep.id = moveChessID;
+	moveStep.type = moveChessID;
 	moveStep.to.x = toX;
 	moveStep.to.y = toY;
 
@@ -392,10 +414,10 @@ bool GameScene::isClickOnChessman(int p_x, int p_y, int x, int y)
 		int r = sqrt(pow(abs(p_x - allChessman[i]->p_x), 2) + pow(abs(p_y - allChessman[i]->p_y), 2));
 		if (allChessman[i]->isLive && r <= GRID_WIDTH / 2)
 		{
-			if (!is_selected || isRedOrBlack(map[9 - y][x], !is_red))
-				selected_id = allChessman[i]->id;
+			if (!is_selected || isRedOrBlack(map[9 - y][x], !color))
+				moveStep.id = allChessman[i]->id;
 			else
-				eaten_id = allChessman[i]->id;
+				moveStep.eaten_id = allChessman[i]->id;
 			return true;
 		}
 	}
@@ -403,27 +425,17 @@ bool GameScene::isClickOnChessman(int p_x, int p_y, int x, int y)
 	return false;
 }
 
-// 是否点击在空白处
-//bool GameScene::isClickOnEmpty(int x, int y)
-//{
-//	int xx = (x - BOARD_WIDTH + GRID_WIDTH / 2) / GRID_WIDTH;
-//	int yy = (y - BOARD_HEIGHT + GRID_WIDTH / 2) / GRID_WIDTH;
-//
-//	if (map[9 - yy][xx] == NOCHESS)
-//	{
-//		moveStep.id = selected_id;
-//		moveStep.to.x = 9 - yy;
-//		moveStep.to.y = xx;
-//		return true;
-//	}
-//
-//	return false;
-//}
+// 设置提示图片
+void GameScene::setCurChessman(int type)
+{
+	curChessman[type]->setVisible(true);
+	curChessman[!type]->setVisible(false);
+}
 
 // 选择棋子
 void GameScene::selectChessman(int type)
 {
-	selected[type]->setPosition(Vec2(allChessman[selected_id]->p_x, allChessman[selected_id]->p_y));
+	selected[type]->setPosition(Vec2(allChessman[moveStep.id]->p_x, allChessman[moveStep.id]->p_y));
 	selected[type]->setVisible(true);
 	if(type == 0)
 		is_selected = true;
@@ -458,7 +470,7 @@ void GameScene::gameOver()
 	this->addChild(gameover);
 
 	// 删除触摸监听
-	_eventDispatcher->removeEventListener(listener);
+	_eventDispatcher->removeAllEventListeners();
 }
 
 void GameScene::menuRestartCallBack(Ref* pSender)

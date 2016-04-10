@@ -9,7 +9,7 @@ class Chessman : public cocos2d::Sprite
 public:
 	int m_x;	// 记录棋子棋盘坐标
 	int m_y;
-	int p_x;	// 记录棋子物理坐标
+	int p_x;	// 记录棋子在Board节点中的坐标
 	int p_y;
 	int id;		// 棋子在allChessman中的id
 	int type;	// 棋子类型

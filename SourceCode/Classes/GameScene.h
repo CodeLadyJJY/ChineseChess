@@ -16,14 +16,13 @@ public:
 private:
 	cocos2d::Size size;								// 窗口大小
 	cocos2d::Sprite* selected[2];					// 选择图片, 0 是红色选择框，1 是蓝色选择框
-	cocos2d::EventListenerTouchOneByOne* listener;	// 触摸监听
+	cocos2d::Sprite* curChessman[2];		// 提示当前下子方
+	cocos2d::Node* board;							// 棋盘节点
 
 	int map[10][9];							// 棋盘地图
 	Chessman *allChessman[32];				// 所有棋子
-	bool is_red;							// 是否是红方走步
+	bool color;								// 玩家颜色，0 黑色，1 红色
 	bool is_selected;						// 是否有选择棋子
-	int selected_id;						// 被选棋子id
-	int eaten_id;							// 被吃棋子id
 	int red_king_id;						// 红方将ID
 	int black_king_id;						// 黑方将ID
 	ChessMove moveStep;						// 移动步骤
@@ -33,7 +32,8 @@ private:
 	void captureChessman();									// 吃子
 	bool isRedOrBlack(int x, int type);						// 判断一个棋子是红色还是黑色, 0判断红色, 1判断黑色
 	bool isValidMove(int toX, int toY);						// 判断一个棋子的走位是否合法
-	bool isClickOnChessman(int p_x, int p_y, int x, int y);	// 是否点击在棋子上
+	bool isClickOnChessman(int g_x, int g_y, int x, int y);	// 是否点击在棋子上
+	void setCurChessman(int type);							// 设置提示图片
 	void selectChessman(int type);							// 选择棋子
 	void unSelectChessman(int type);						// 取消选择棋子
 	bool isGameOver();										// 游戏是否结束
