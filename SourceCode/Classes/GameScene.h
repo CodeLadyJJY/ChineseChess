@@ -5,19 +5,23 @@
 #include "Chessman.h"
 #include "define.h"
 
-class GameScene : public cocos2d::Layer
+USING_NS_CC;
+
+class GameScene : public Layer
 {
 public:
-    static cocos2d::Scene* createScene();
+    static Scene* createScene();
     virtual bool init();
 	CREATE_FUNC(GameScene);
-    void menuRestartCallBack(cocos2d::Ref* pSender);
+    void menuRestartCallBack(Ref* pSender);
 
 private:
-	cocos2d::Size size;								// 窗口大小
-	cocos2d::Sprite* selected[2];					// 选择图片, 0 是红色选择框，1 是蓝色选择框
-	cocos2d::Sprite* curChessman[2];		// 提示当前下子方
-	cocos2d::Node* board;							// 棋盘节点
+	Size size;								// 窗口大小
+	Sprite* selected[2];					// 选择图片, 0 是红色选择框，1 是蓝色选择框
+	Sprite* curChessman[2];					// 提示当前下子方
+	Node* board;							// 棋盘节点
+	void initUI();							// 初始化界面
+	void initListener();					// 初始化监听
 
 	int map[10][9];							// 棋盘地图
 	Chessman *allChessman[32];				// 所有棋子

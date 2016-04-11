@@ -1,7 +1,5 @@
 #include "GameScene.h"
 
-USING_NS_CC;
-
 Scene* GameScene::createScene()
 {
     // 'scene' is an autorelease object
@@ -24,7 +22,16 @@ bool GameScene::init()
         return false;
     }
     
-    size = Director::getInstance()->getWinSize();
+	initUI();
+	initListener();
+	
+    return true;
+}
+
+// 初始化界面
+void GameScene::initUI()
+{
+	size = Director::getInstance()->getWinSize();
 
 	// 棋盘
 	board = Node::create();
@@ -88,7 +95,11 @@ bool GameScene::init()
 	menu->setPosition(Vec2::ZERO);
 	menuItemReStart->setPosition(size.width / 2, size.height / 8);
 	this->addChild(menu);
-    
+}
+
+// 初始化监听
+void GameScene::initListener()
+{
 	// 触摸侦听
 	auto listener = EventListenerTouchOneByOne::create();
 
@@ -110,7 +121,7 @@ bool GameScene::init()
 				setCurChessman(color);
 			}
 			// 如果点击的是己方棋子，则选择棋子
-			else if(isRedOrBlack(map[9 - y][x], !color))
+			else if (isRedOrBlack(map[9 - y][x], !color))
 			{
 				moveStep.from.x = allChessman[moveStep.id]->m_x;
 				moveStep.from.y = allChessman[moveStep.id]->m_y;
@@ -135,8 +146,6 @@ bool GameScene::init()
 	};
 
 	Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener, this);
-
-    return true;
 }
 
 // 创建新子
