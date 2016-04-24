@@ -1,3 +1,7 @@
+[![logo](/logo.png)](http://www.codelady.space)
+
+----------
+
 # 中国象棋-单机版
 
 **简介：**一个休闲小游戏
